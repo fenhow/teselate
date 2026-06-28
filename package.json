@@ -1,0 +1,9 @@
+{
+  "name": "tezelate-nda",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tezelate NDA electronic signing page with auto-email delivery",
+  "dependencies": {
+    "resend": "^4.0.0"
+  }
+}
