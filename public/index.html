@@ -1,0 +1,312 @@
+<!-- ============================================================
+     Tezelate LLC — Electronic NDA Signing Page (FREE / no third party)
+     ------------------------------------------------------------
+     Signer reviews -> fills details -> e-signs -> page builds a PDF with
+     IP + timestamp, downloads it, and opens their email app pre-addressed
+     to both founders. No accounts, no services, no monthly cost.
+     >>> EDIT THE SETTINGS IN THE <script id="config"> BLOCK BELOW <<<
+     ============================================================ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tezelate LLC — Mutual NDA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.7/signature_pad.umd.min.js"></script>
+<style>
+  :root{ --navy:#1F3864; --navy2:#2E4D86; --line:#d8dee9; --bg:#f4f6fa; --ink:#1a2233; --muted:#5b6675; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:820px;margin:0 auto;padding:28px 18px 64px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  header .logo{width:38px;height:38px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px}
+  header h1{font-size:20px;margin:0;color:var(--navy)}
+  .sub{color:var(--muted);font-size:14px;margin:2px 0 22px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(20,30,60,.05)}
+  .card h2{font-size:15px;color:var(--navy);margin:0 0 12px;letter-spacing:.2px}
+  .nda{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:#fbfcfe;font-size:13.5px}
+  .nda h3{font-size:13.5px;color:var(--navy);margin:16px 0 4px}
+  .nda h3:first-child{margin-top:0}
+  .nda p{margin:0 0 9px}
+  .nda ul{margin:0 0 9px 18px;padding:0}
+  .nda li{margin:0 0 5px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:0 0 5px}
+  input[type=text],input[type=email]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:#fff}
+  input:focus{outline:2px solid var(--navy2);outline-offset:0;border-color:var(--navy2)}
+  .field{margin-bottom:14px}
+  .tabs{display:flex;gap:8px;margin-bottom:10px}
+  .tab{flex:1;padding:8px;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted)}
+  .tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .sigwrap{border:1px dashed #b9c2d4;border-radius:10px;background:#fff;position:relative}
+  canvas{width:100%;height:160px;display:block;touch-action:none;border-radius:10px}
+  #typedSig{display:none}
+  #typedSigInput{width:100%;padding:14px 12px;border:1px solid var(--line);border-radius:9px;font-size:26px;font-family:'Segoe Script','Brush Script MT',cursive;color:#10203f}
+  .clear{position:absolute;top:8px;right:10px;font-size:12px;color:var(--navy2);background:none;border:none;cursor:pointer;font-weight:600}
+  .consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink);margin-top:6px}
+  .consent input{margin-top:3px}
+  .btn{width:100%;margin-top:18px;padding:14px;border:none;border-radius:11px;background:var(--navy);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .note{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+  .msg{display:none;padding:14px 16px;border-radius:10px;font-size:14px;margin-top:8px}
+  .msg.ok{display:block;background:#e7f6ec;color:#15633a;border:1px solid #b6e0c4}
+  .msg.err{display:block;background:#fdecec;color:#9b2222;border:1px solid #f3c2c2}
+  .req{color:#c0392b}
+</style>
+</head>
+<body>
+<!-- ====================== CONFIG: EDIT THESE ====================== -->
+<script id="config">
+window.NDA_CONFIG = {
+  ENDPOINT:            "/api/send-nda",          // serverless mailer (same Vercel project)
+  RECIPIENT_PRIMARY:   "fhow@tezelate.com",     // founder #1 (email fallback only)
+  RECIPIENT_CC:        "cstagg@tezelate.com",   // founder #2 (email fallback only)
+  TEZELATE_ADDRESS:    "195 Lantana Vista, Spring Branch, TX 78070",
+  VENUE_COUNTY:        "Comal",
+  PRODUCT_NAME:        "Guardian"
+};
+</script>
+<!-- =============================================================== -->
+
+<div class="wrap">
+  <header>
+    <div class="logo">T</div>
+    <div><h1>Tezelate LLC — Mutual Non-Disclosure Agreement</h1></div>
+  </header>
+  <p class="sub">Please review the agreement, fill in your details, and sign below. A signed PDF copy will be emailed to Tezelate and downloaded to your device.</p>
+
+  <div class="card">
+    <h2>1 · Review the Agreement</h2>
+    <div class="nda" id="ndaText"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Your Details (the “Counterparty”)</h2>
+    <div class="grid">
+      <div class="field"><label>Company / legal name <span class="req">*</span></label><input type="text" id="cpName" autocomplete="organization"></div>
+      <div class="field"><label>Signer full name <span class="req">*</span></label><input type="text" id="signerName" autocomplete="name"></div>
+      <div class="field"><label>Signer title <span class="req">*</span></label><input type="text" id="signerTitle" autocomplete="organization-title"></div>
+      <div class="field"><label>Signer email <span class="req">*</span></label><input type="email" id="signerEmail" autocomplete="email"></div>
+    </div>
+    <div class="field"><label>Company address <span class="req">*</span></label><input type="text" id="cpAddr" autocomplete="street-address"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Sign</h2>
+    <div class="tabs">
+      <button class="tab active" id="tabDraw" type="button">Draw signature</button>
+      <button class="tab" id="tabType" type="button">Type signature</button>
+    </div>
+    <div class="sigwrap" id="drawWrap">
+      <button class="clear" id="clearSig" type="button">Clear</button>
+      <canvas id="sigCanvas"></canvas>
+    </div>
+    <input type="text" id="typedSigInput" placeholder="Type your full name" style="display:none">
+    <label class="consent">
+      <input type="checkbox" id="consent">
+      <span>I agree that signing electronically is the legal equivalent of my handwritten signature, that I am authorized to sign on behalf of the company above, and I consent to do business electronically (ESIGN/UETA).</span>
+    </label>
+    <button class="btn" id="submitBtn" type="button">Sign &amp; Submit NDA</button>
+    <div class="note">Your IP address and a timestamp are recorded with the signature for verification.</div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+const C = window.NDA_CONFIG;
+const today = new Date();
+const dateStr = today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+/* ---------- NDA content (single source for screen + PDF) ---------- */
+function ndaBlocks(v){
+  const cp = v.cpName || "[COUNTERPARTY FULL LEGAL NAME]";
+  const cpAddr = v.cpAddr || "[COUNTERPARTY ADDRESS]";
+  return [
+    {t:'p', x:`This Mutual Non-Disclosure Agreement (this "Agreement") is made as of ${dateStr} between Tezelate LLC, a Texas limited liability company located at ${C.TEZELATE_ADDRESS} ("Tezelate"), and ${cp}, located at ${cpAddr} ("Counterparty"). Tezelate and Counterparty are each a "Party" and together the "Parties."`},
+    {t:'p', x:`The Parties want to explore a possible business relationship involving Tezelate's business and its products and technology in development, including the product known as "${C.PRODUCT_NAME}" (the "Purpose"). To do this, each Party may share confidential information with the other. The Parties agree as follows:`},
+
+    {t:'h', x:`1. What "Confidential Information" Means`},
+    {t:'p', x:`"Confidential Information" is any non-public information one Party (the "Disclosing Party") shares with the other (the "Receiving Party") for the Purpose — whether spoken, written, or electronic. It includes, for example, product plans and prototypes, technology, designs, research, know-how, software, business and financial information, customer and supplier details, and anything else that a reasonable person would understand to be confidential given its nature or how it was shared.`},
+    {t:'p', x:`Confidential Information does not include information that:`},
+    {t:'u', x:[
+      `is or becomes public through no fault of the Receiving Party;`,
+      `the Receiving Party already knew, without any confidentiality obligation, before it was shared;`,
+      `the Receiving Party rightfully gets from someone else who is free to share it; or`,
+      `the Receiving Party develops on its own without using the Disclosing Party's Confidential Information.`]},
+
+    {t:'h', x:`2. How Each Party Must Handle Confidential Information`},
+    {t:'p', x:`The Receiving Party agrees to:`},
+    {t:'u', x:[
+      `keep the Confidential Information confidential, using at least the same care it uses for its own confidential information (and never less than reasonable care);`,
+      `use it only for the Purpose;`,
+      `not share it with anyone else without the Disclosing Party's written permission; and`,
+      `share it only with people who need it for the Purpose — its employees, contractors, and advisors (such as attorneys and accountants), and, for a Party that is an investor or investment fund, its affiliates, partners, and potential co-investors — as long as they are bound by confidentiality obligations at least as strict as these (each, a "Representative").`]},
+    {t:'p', x:`Each Party is responsible for any breach of this Agreement by its Representatives.`},
+    {t:'p', x:`Confidentiality of the discussions. Neither Party will publicly disclose that the Parties are in discussions, or the status or terms of those discussions, without the other Party's written consent — except as allowed under Section 3.`},
+
+    {t:'h', x:`3. Disclosures Required by Law`},
+    {t:'p', x:`If the Receiving Party is legally required to disclose Confidential Information (for example, by a court order), it may do so — but only to the extent required, and it will give the Disclosing Party prompt written notice first (where legally allowed) so the Disclosing Party can seek protection.`},
+
+    {t:'h', x:`4. How Long This Lasts`},
+    {t:'p', x:`This Agreement starts on the date above and continues for two (2) years. Either Party may end it earlier with thirty (30) days' written notice. Ending the Agreement does not affect Confidential Information already shared: the confidentiality obligations continue for three (3) years after the information is shared — and, for trade secrets, for as long as the law protects them as trade secrets.`},
+
+    {t:'h', x:`5. Returning or Destroying Information`},
+    {t:'p', x:`When the Disclosing Party asks, or when this Agreement ends, the Receiving Party will promptly return or destroy all Confidential Information and copies, and confirm in writing that it has done so. The Receiving Party may keep one copy solely to meet legal or recordkeeping requirements, which stays subject to this Agreement.`},
+
+    {t:'h', x:`6. No License, No Investment, and No Offer of Securities`},
+    {t:'p', x:`Sharing Confidential Information does not give either Party any rights to the other's patents, copyrights, trademarks, trade secrets, or other intellectual property. Neither Party has to share any particular information or enter into any further agreement or deal because of this Agreement.`},
+    {t:'p', x:`Nothing in this Agreement and no Confidential Information shared under it is an offer to sell, or a solicitation to buy, any securities of Tezelate. No Party is obligated to make or accept any investment, and any investment would be made only under separate definitive agreements signed by the Parties.`},
+
+    {t:'h', x:`7. No Warranty`},
+    {t:'p', x:`Confidential Information is provided "as is." Neither Party promises that its Confidential Information is accurate or complete, and neither is liable for the other's use of it.`},
+
+    {t:'h', x:`8. Enforcement`},
+    {t:'p', x:`The Parties agree that money alone may not be enough to fix a breach of this Agreement. So, in addition to any other remedies, the Disclosing Party may ask a court to stop a breach (an injunction) without having to post a bond.`},
+
+    {t:'h', x:`9. Other Terms`},
+    {t:'p', x:`Governing law. This Agreement is governed by the laws of the State of Texas, without regard to its conflict-of-laws rules. Any dispute will be handled exclusively in the state or federal courts located in ${C.VENUE_COUNTY} County, Texas.`},
+    {t:'p', x:`Entire agreement. This is the complete agreement between the Parties on this subject and replaces any earlier understandings about it. It can only be changed in writing signed by both Parties.`},
+    {t:'p', x:`Severability and waiver. If any part of this Agreement is unenforceable, the rest still applies. A Party's delay in enforcing a right is not a waiver of it.`},
+    {t:'p', x:`Signing. This Agreement may be signed in counterparts, and electronic signatures count as originals. Notices must be in writing and sent to the addresses in the signature block below.`}
+  ];
+}
+
+/* ---------- Render NDA on screen ---------- */
+function renderNda(){
+  const blocks = ndaBlocks({cpName:cpName.value.trim(),cpAddr:cpAddr.value.trim()});
+  let html='';
+  blocks.forEach(b=>{
+    if(b.t==='h') html+=`<h3>${esc(b.x)}</h3>`;
+    else if(b.t==='p') html+=`<p>${esc(b.x)}</p>`;
+    else if(b.t==='u'){ html+='<ul>'; b.x.forEach(li=>html+=`<li>${esc(li)}</li>`); html+='</ul>'; }
+  });
+  ndaText.innerHTML=html;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ---------- Signature pad ---------- */
+const canvas=document.getElementById('sigCanvas');
+let pad;
+function sizeCanvas(){const r=Math.max(window.devicePixelRatio||1,1);canvas.width=canvas.offsetWidth*r;canvas.height=canvas.offsetHeight*r;canvas.getContext('2d').scale(r,r);if(pad)pad.clear();}
+window.addEventListener('load',()=>{pad=new SignaturePad(canvas,{penColor:'#10203f'});sizeCanvas();renderNda();});
+window.addEventListener('resize',sizeCanvas);
+clearSig.onclick=()=>pad.clear();
+
+let sigMode='draw';
+tabDraw.onclick=()=>{sigMode='draw';tabDraw.classList.add('active');tabType.classList.remove('active');drawWrap.style.display='block';clearSig.style.display='block';typedSigInput.style.display='none';};
+tabType.onclick=()=>{sigMode='type';tabType.classList.add('active');tabDraw.classList.remove('active');drawWrap.style.display='none';clearSig.style.display='none';typedSigInput.style.display='block';};
+
+['input','blur'].forEach(ev=>{cpName.addEventListener(ev,renderNda);cpAddr.addEventListener(ev,renderNda);});
+
+/* ---------- Build typed signature as an image ---------- */
+function typedSignatureDataURL(name){
+  const c=document.createElement('canvas');c.width=600;c.height=140;const x=c.getContext('2d');
+  x.fillStyle='#10203f';x.font='52px "Segoe Script","Brush Script MT",cursive';x.textBaseline='middle';x.fillText(name,12,78);
+  return c.toDataURL('image/png');
+}
+
+/* ---------- Generate the signed PDF ---------- */
+function buildPdf(v,sigDataUrl,meta){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'pt',format:'letter'});
+  const M=56, W=612-M*2; let y=64;
+  const line=(h)=>{y+=h; if(y>720){doc.addPage();y=64;}};
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(31,56,100);
+  doc.text('Mutual Non-Disclosure Agreement',306,y,{align:'center'});y+=26;
+  doc.setTextColor(26,34,51);
+  ndaBlocks(v).forEach(b=>{
+    if(b.t==='h'){doc.setFont('helvetica','bold');doc.setFontSize(11.5);doc.setTextColor(31,56,100);line(8);
+      doc.text(b.x,M,y);doc.setTextColor(26,34,51);line(4);}
+    else if(b.t==='p'){doc.setFont('helvetica','normal');doc.setFontSize(10);
+      const ls=doc.splitTextToSize(b.x,W);ls.forEach(l=>{doc.text(l,M,y);line(13.5);});line(4);}
+    else if(b.t==='u'){doc.setFont('helvetica','normal');doc.setFontSize(10);
+      b.x.forEach(it=>{const ls=doc.splitTextToSize(it,W-16);doc.text('•',M+4,y);ls.forEach((l,i)=>{doc.text(l,M+16,y);line(13.5);});line(2);});line(2);}
+  });
+  /* signature block */
+  line(14);doc.setFont('helvetica','bold');doc.setFontSize(10.5);
+  if(y>660){doc.addPage();y=64;}
+  doc.text('By signing below, each Party agrees to this Agreement as of the date first written above.',M,y);line(26);
+  doc.setFont('helvetica','bold');doc.text('Tezelate LLC',M,y);doc.text(v.cpName||'Counterparty',M+288,y);line(16);
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+  doc.text('By: ____________________________',M,y);
+  try{doc.addImage(sigDataUrl,'PNG',M+288,y-26,150,40);}catch(e){}
+  doc.text('By: ',M+288,y);line(14);
+  doc.text('Name: __________________________',M,y);doc.text('Name: '+(v.signerName||''),M+288,y);line(14);
+  doc.text('Title: ___________________________',M,y);doc.text('Title: '+(v.signerTitle||''),M+288,y);line(14);
+  doc.text('Date: ___________________________',M,y);doc.text('Date: '+dateStr,M+288,y);line(22);
+  /* audit trail */
+  doc.setDrawColor(210,216,228);doc.line(M,y,612-M,y);line(14);
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(91,102,117);doc.text('ELECTRONIC SIGNATURE RECORD',M,y);line(12);
+  doc.setFont('helvetica','normal');
+  const audit=[
+    `Signed by: ${v.signerName} (${v.signerEmail}) for ${v.cpName}`,
+    `Date/time: ${meta.ts}`,
+    `IP address: ${meta.ip}`,
+    `Consent: Signer agreed to do business electronically (ESIGN/UETA).`,
+    `Method: ${meta.method} signature.`
+  ];
+  audit.forEach(a=>{doc.text(a,M,y);line(11);});
+  return doc;
+}
+
+/* ---------- Submit ---------- */
+submitBtn.onclick=async()=>{
+  msg.className='msg';msg.textContent='';
+  const v={cpName:cpName.value.trim(),cpAddr:cpAddr.value.trim(),signerName:signerName.value.trim(),
+           signerTitle:signerTitle.value.trim(),signerEmail:signerEmail.value.trim()};
+  if(!v.cpName||!v.cpAddr||!v.signerName||!v.signerTitle||!v.signerEmail){return fail('Please fill in all required fields.');}
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.signerEmail)){return fail('Please enter a valid email address.');}
+  if(!consent.checked){return fail('Please check the consent box to sign electronically.');}
+  let sigUrl,method;
+  if(sigMode==='draw'){ if(pad.isEmpty())return fail('Please draw your signature.'); sigUrl=pad.toDataURL('image/png'); method='Drawn'; }
+  else { if(!typedSigInput.value.trim())return fail('Please type your signature.'); sigUrl=typedSignatureDataURL(typedSigInput.value.trim()); method='Typed'; }
+
+  submitBtn.disabled=true;submitBtn.textContent='Submitting…';
+  let ip='Unavailable';
+  try{const r=await fetch('https://api.ipify.org?format=json');ip=(await r.json()).ip;}catch(e){}
+  const meta={ts:new Date().toString(),ip,method};
+  const pdf=buildPdf(v,sigUrl,meta);
+  const blob=pdf.output('blob');
+  const fname=`NDA_Tezelate_${v.cpName.replace(/[^a-z0-9]+/gi,'_')}_${today.toISOString().slice(0,10)}.pdf`;
+
+  // 1) Always give the signer their own copy
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();
+
+  // 2) Auto-send the signed PDF to both founders via the serverless mailer (no signer action needed)
+  const pdfBase64=await blobToBase64(blob);
+  const payload={
+    filename:fname,
+    pdfBase64,
+    counterparty:v.cpName,
+    signerName:v.signerName,
+    signerTitle:v.signerTitle,
+    signerEmail:v.signerEmail,
+    companyAddress:v.cpAddr,
+    signedAt:meta.ts,
+    ip:ip,
+    method:method
+  };
+  try{
+    const res=await fetch(C.ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    msg.className='msg ok';
+    msg.innerHTML='&#10003; Signed and sent to Tezelate. A copy of the signed PDF was downloaded to your device. Thank you, '+esc(v.signerName)+'.';
+    submitBtn.textContent='Submitted ✓';
+  }catch(e){
+    // Fallback: open the signer's email app pre-addressed to both founders
+    const to=encodeURIComponent(C.RECIPIENT_PRIMARY+(C.RECIPIENT_CC?(','+C.RECIPIENT_CC):''));
+    const subject=encodeURIComponent('Signed NDA — '+v.cpName);
+    const body=encodeURIComponent('A signed Tezelate NDA is attached.\n\nPlease attach the PDF that just downloaded ("'+fname+'").\n\n--- Electronic signature record ---\nCounterparty: '+v.cpName+'\nSigner: '+v.signerName+', '+v.signerTitle+'\nSigner email: '+v.signerEmail+'\nSigned at: '+meta.ts+'\nIP address: '+ip+'\nMethod: '+method+'\nConsent: agreed to sign electronically (ESIGN/UETA).');
+    setTimeout(()=>{window.location.href='mailto:'+to+'?subject='+subject+'&body='+body;},700);
+    msg.className='msg ok';
+    msg.innerHTML='&#10003; Signed. Your copy ("'+esc(fname)+'") downloaded. Your email app is opening as a backup &mdash; please <b>attach that PDF</b> and press Send. Thank you, '+esc(v.signerName)+'.';
+    submitBtn.textContent='Done ✓';
+  }
+};
+function blobToBase64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onloadend=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(blob);});}
+function fail(m){msg.className='msg err';msg.textContent=m;submitBtn.disabled=false;submitBtn.textContent='Sign & Submit NDA';return;}
+</script>
+</body>
+</html>
