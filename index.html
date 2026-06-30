@@ -356,7 +356,7 @@ function showThankYou(name){
   var nm=document.getElementById('tyName'); if(nm) nm.textContent=name||'there';
   if(ty) ty.style.display='block';
   try{window.scrollTo(0,0);}catch(e){}
-  var GAME='https://nothingleftbehind.netlify.app/';
+  var GAME='https://tezelate.com/';
   var sec=5, el=document.getElementById('tyCount');
   var timer=setInterval(function(){ sec--; if(el) el.textContent=sec; if(sec<=0){ clearInterval(timer); window.location.href=GAME; } },1000);
 }
