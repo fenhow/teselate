@@ -318,18 +318,29 @@ submitBtn.onclick=async()=>{
   const blob=pdf.output('blob');
   const fname=`NDA_Tezelate_${v.cpName.replace(/[^a-z0-9]+/gi,'_')}_${today.toISOString().slice(0,10)}.pdf`;
 
-  // 1) Always give the signer their own copy
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();
-
-  // 2) Auto-send the signed PDF to both founders via the serverless mailer
+  // 1) Send the signed PDF to both founders via the serverless mailer FIRST
+  //    (on mobile browsers, triggering a download can navigate the page away,
+  //     so the backend call must complete before we attempt any download)
   const pdfBase64=await blobToBase64(blob);
   const payload={filename:fname,pdfBase64,counterparty:v.cpName,signerName:v.signerName,signerTitle:v.signerTitle,
     signerEmail:v.signerEmail,companyAddress:v.cpAddr,signedAt:meta.ts,ip:ip,method:method};
+
+  let backendOk=false;
   try{
     const res=await fetch(C.ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!res.ok) throw new Error('HTTP '+res.status);
+    if(res.ok) backendOk=true;
+  }catch(e){}
+
+  // 2) Give the signer their own copy (wrapped so it can't break the flow)
+  try{
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},60000);
+  }catch(e){}
+
+  // 3) Show result: thank-you screen on success, mailto fallback on failure
+  if(backendOk){
     showThankYou(v.signerName);
-  }catch(e){
+  }else{
     const to=encodeURIComponent(C.RECIPIENT_PRIMARY+(C.RECIPIENT_CC?(','+C.RECIPIENT_CC):''));
     const subject=encodeURIComponent('Signed NDA — '+v.cpName);
     const body=encodeURIComponent('A signed Tezelate NDA is attached.\n\nPlease attach the PDF that just downloaded ("'+fname+'").\n\n--- Electronic signature record ---\nCounterparty: '+v.cpName+'\nSigner: '+v.signerName+', '+v.signerTitle+'\nSigner email: '+v.signerEmail+'\nSigned at: '+meta.ts+'\nIP address: '+ip+'\nMethod: '+method+'\nConsent: agreed to sign electronically (ESIGN/UETA).');
